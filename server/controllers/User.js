@@ -27,7 +27,7 @@ export const UserRegister = async (req, res, next) => {
       img,
     });
     const createdUser = await user.save();
-    const token = jwt.sign({ id: createdUser._id }, process.env.JWT, {
+    const token = jwt.sign({ id: createdUser._id }, process.env.JWT_SECRET, {
       expiresIn: "9999 years",
     });
     return res.status(200).json({ token, user });
@@ -52,7 +52,7 @@ export const UserLogin = async (req, res, next) => {
       return next(createError(403, "Incorrect password"));
     }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT, {
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "9999 years",
     });
 
@@ -308,4 +308,8 @@ const calculateCaloriesBurnt = (workoutDetails) => {
   const weightInKg = parseInt(workoutDetails.weight);
   const caloriesBurntPerMinute = 5; // Sample value, actual calculation may vary
   return durationInMinutes * caloriesBurntPerMinute * weightInKg;
+};
+
+export const signToken = (user) => {
+  return jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1d" });
 };

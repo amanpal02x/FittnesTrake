@@ -1,10 +1,10 @@
-import express from "express";
 import * as dotenv from "dotenv";
+dotenv.config();
+import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
 import UserRoutes from "./routes/User.js";
-
-dotenv.config();
+import jwt from "jsonwebtoken";
 
 const app = express();
 app.use(cors());
@@ -43,6 +43,7 @@ const connectDB = () => {
 const startServer = async () => {
   try {
     connectDB();
+    console.log("JWT_SECRET:", process.env.JWT_SECRET);
     app.listen(8080, () => console.log("Server started on port 8080"));
   } catch (error) {
     console.log(error);
@@ -50,3 +51,8 @@ const startServer = async () => {
 };
 
 startServer();
+
+export const signToken = (user) => {
+  console.log("JWT_SECRET in controller:", process.env.JWT_SECRET);
+  return jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1d" });
+};
