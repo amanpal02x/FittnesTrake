@@ -93,18 +93,21 @@ const AppContent = () => {
                 <MainContent>
                   <PageContainer>
                     <Routes>
-                      <Route path="/" element={<Authentication />} />
+                      <Route path="/" element={<Dashboard />} />
                       <Route path="/dashboard" element={<Dashboard />} />
                       <Route path="/workouts" element={<Workouts />} />
                       <Route path="/blog" element={<Blog />} />
                       <Route path="/contact" element={<ContactUs />} />
+                      <Route path="*" element={<Dashboard />} />
                     </Routes>
                   </PageContainer>
                 </MainContent>
                 <Footer />
               </>
             ) : (
-              <Authentication />
+              <Routes>
+                <Route path="*" element={<Authentication />} />
+              </Routes>
             )}
           </Container>
         </BrowserRouter>

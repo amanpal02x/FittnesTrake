@@ -6,6 +6,7 @@ import { UserSignIn } from "../api";
 import { useDispatch } from "react-redux";
 import { loginSuccess } from "../redux/reducers/userSlice";
 import { Person, Info } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 
 const Container = styled.div`
   width: 100%;
@@ -86,6 +87,7 @@ const TooltipText = styled.div`
 
 const SignIn = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [buttonDisabled, setButtonDisabled] = useState(false);
   const [email, setEmail] = useState("");
@@ -103,18 +105,19 @@ const SignIn = () => {
     setLoading(true);
     setButtonDisabled(true);
     if (validateInputs()) {
-      await UserSignIn({ email, password })
-        .then((res) => {
-          dispatch(loginSuccess(res.data));
-          alert("Login Success");
-          setLoading(false);
-          setButtonDisabled(false);
-        })
-        .catch((err) => {
-          alert(err.response.data.message);
-          setLoading(false);
-          setButtonDisabled(false);
-        });
+      try {
+        const res = await UserSignIn({ email, password });
+        dispatch(loginSuccess(res.data));
+        navigate("/dashboard");
+      } catch (err) {
+        alert(err.message || "An error occurred during sign in");
+      } finally {
+        setLoading(false);
+        setButtonDisabled(false);
+      }
+    } else {
+      setLoading(false);
+      setButtonDisabled(false);
     }
   };
 
