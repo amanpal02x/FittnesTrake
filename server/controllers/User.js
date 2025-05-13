@@ -225,81 +225,95 @@ export const addWorkout = async (req, res, next) => {
     if (!workoutString) {
       return next(createError(400, "Workout string is missing"));
     }
+
     // Split workoutString into lines
-    const eachworkout = workoutString.split(";").map((line) => line.trim());
-    // Check if any workouts start with "#" to indicate categories
-    const categories = eachworkout.filter((line) => line.startsWith("#"));
-    if (categories.length === 0) {
-      return next(createError(400, "No categories found in workout string"));
+    const lines = workoutString.trim().split('\n').map(line => line.trim());
+    if (lines.length < 5) {
+      return next(createError(400, "Invalid workout format - not enough lines"));
     }
 
-    const parsedWorkouts = [];
-    let currentCategory = "";
-    let count = 0;
+    // Parse category and workout name
+    const category = lines[0].startsWith('#') ? lines[0].substring(1).trim() : null;
+    const workoutName = lines[1].startsWith('-') ? lines[1].substring(1).trim() : null;
 
-    // Loop through each line to parse workout details
-    await eachworkout.forEach((line) => {
-      count++;
-      if (line.startsWith("#")) {
-        const parts = line?.split("\n").map((part) => part.trim());
-        console.log(parts);
-        if (parts.length < 5) {
-          return next(
-            createError(400, `Workout string is missing for ${count}th workout`)
-          );
-        }
+    if (!category || !workoutName) {
+      return next(createError(400, "Invalid workout format - missing category or workout name"));
+    }
 
-        // Update current category
-        currentCategory = parts[0].substring(1).trim();
-        // Extract workout details
-        const workoutDetails = parseWorkoutLine(parts);
-        if (workoutDetails == null) {
-          return next(createError(400, "Please enter in proper format "));
-        }
+    // Check for duplicate workout today
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
 
-        if (workoutDetails) {
-          // Add category to workout details
-          workoutDetails.category = currentCategory;
-          parsedWorkouts.push(workoutDetails);
-        }
-      } else {
-        return next(
-          createError(400, `Workout string is missing for ${count}th workout`)
-        );
+    const existingWorkout = await Workout.findOne({
+      user: userId,
+      workoutName: workoutName,
+      date: {
+        $gte: startOfDay,
+        $lte: endOfDay
       }
     });
 
-    // Calculate calories burnt for each workout
-    await parsedWorkouts.forEach(async (workout) => {
-      workout.caloriesBurned = parseFloat(calculateCaloriesBurnt(workout));
-      await Workout.create({ ...workout, user: userId });
+    if (existingWorkout) {
+      return next(createError(409, `Workout '${workoutName}' already exists for today`));
+    }
+
+    // Parse workout details
+    const workoutDetails = parseWorkoutLine(lines);
+    if (!workoutDetails) {
+      return next(createError(400, "Invalid workout format - could not parse details"));
+    }
+
+    // Add category and calculate calories
+    workoutDetails.category = category;
+    workoutDetails.caloriesBurned = calculateCaloriesBurnt(workoutDetails);
+
+    // Create the workout
+    const workout = await Workout.create({ 
+      ...workoutDetails, 
+      user: userId,
+      date: new Date() 
     });
 
     return res.status(201).json({
-      message: "Workouts added successfully",
-      workouts: parsedWorkouts,
+      message: "Workout added successfully",
+      workout: workout
     });
   } catch (err) {
+    if (err.code === 11000) { // MongoDB duplicate key error
+      return next(createError(409, "This workout already exists for today"));
+    }
     next(err);
   }
 };
 
-// Function to parse workout details from a line
-const parseWorkoutLine = (parts) => {
-  const details = {};
-  console.log(parts);
-  if (parts.length >= 5) {
-    details.workoutName = parts[1].substring(1).trim();
-    details.sets = parseInt(parts[2].split("sets")[0].substring(1).trim());
-    details.reps = parseInt(
-      parts[2].split("sets")[1].split("reps")[0].substring(1).trim()
-    );
-    details.weight = parseFloat(parts[3].split("kg")[0].substring(1).trim());
-    details.duration = parseFloat(parts[4].split("min")[0].substring(1).trim());
-    console.log(details);
-    return details;
+// Function to parse workout details from lines
+const parseWorkoutLine = (lines) => {
+  try {
+    if (lines.length < 5) return null;
+
+    // Extract numeric values using regex
+    const setsMatch = lines[2].match(/(\d+)\s*sets/i);
+    const repsMatch = lines[2].match(/(\d+)\s*reps/i);
+    const weightMatch = lines[3].match(/(\d+(?:\.\d+)?)\s*kg/i);
+    const durationMatch = lines[4].match(/(\d+(?:\.\d+)?)\s*min/i);
+
+    if (!setsMatch || !repsMatch || !weightMatch || !durationMatch) {
+      return null;
+    }
+
+    return {
+      workoutName: lines[1].startsWith('-') ? lines[1].substring(1).trim() : lines[1].trim(),
+      sets: parseInt(setsMatch[1]),
+      reps: parseInt(repsMatch[1]),
+      weight: parseFloat(weightMatch[1]),
+      duration: parseFloat(durationMatch[1])
+    };
+  } catch (error) {
+    console.error('Error parsing workout line:', error);
+    return null;
   }
-  return null;
 };
 
 // Function to calculate calories burnt for a workout

@@ -13,15 +13,24 @@ const Container = styled.div`
   flex-direction: column;
   gap: 36px;
 `;
+
 const Title = styled.div`
   font-size: 30px;
   font-weight: 800;
   color: ${({ theme }) => theme.text_primary};
 `;
+
 const Span = styled.div`
   font-size: 16px;
   font-weight: 400;
   color: ${({ theme }) => theme.text_secondary + 90};
+`;
+
+const InputContainer = styled.div`
+  display: flex;
+  gap: 20px;
+  flex-direction: column;
+  position: relative;
 `;
 
 const SignUp = () => {
@@ -70,31 +79,25 @@ const SignUp = () => {
         <Title>Create New Account 👋</Title>
         <Span>Please enter details to create a new account</Span>
       </div>
-      <div
-        style={{
-          display: "flex",
-          gap: "20px",
-          flexDirection: "column",
-        }}
-      >
+      <InputContainer>
         <TextInput
           label="Full name"
           placeholder="Enter your full name"
           value={name}
-          handelChange={(e) => setName(e.target.value)}
+          handleChange={(e) => setName(e.target.value)}
         />
         <TextInput
           label="Email Address"
           placeholder="Enter your email address"
           value={email}
-          handelChange={(e) => setEmail(e.target.value)}
+          handleChange={(e) => setEmail(e.target.value)}
         />
         <TextInput
           label="Password"
           placeholder="Enter your password"
           password
           value={password}
-          handelChange={(e) => setPassword(e.target.value)}
+          handleChange={(e) => setPassword(e.target.value)}
         />
         <Button
           text="SignUp"
@@ -102,7 +105,7 @@ const SignUp = () => {
           isloading={loading}
           isdisabled={buttonDisabled}
         />
-      </div>
+      </InputContainer>
     </Container>
   );
 };

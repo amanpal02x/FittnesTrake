@@ -14,7 +14,6 @@ const WorkoutSchema = new mongoose.Schema(
     workoutName: {
       type: String,
       required: true,
-      unique: true,
     },
     sets: {
       type: Number,
@@ -38,5 +37,20 @@ const WorkoutSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// Add compound index for user, workoutName, and date
+WorkoutSchema.index({ 
+  user: 1, 
+  workoutName: 1,
+  date: 1
+}, { 
+  unique: true,
+  partialFilterExpression: {
+    // Only apply uniqueness when all fields exist
+    user: { $exists: true },
+    workoutName: { $exists: true },
+    date: { $exists: true }
+  }
+});
 
 export default mongoose.model("Workout", WorkoutSchema);
