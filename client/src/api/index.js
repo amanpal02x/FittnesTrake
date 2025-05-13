@@ -1,8 +1,8 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://localhost:8080/api",
-  // baseURL: "https://fittnestrake.onrender.com/api/",
+  // baseURL: "http://localhost:8080/api",
+  baseURL: "https://fittnestrake.onrender.com/api/",
   timeout: 10000, // 10 seconds timeout
   headers: {
     'Content-Type': 'application/json',
